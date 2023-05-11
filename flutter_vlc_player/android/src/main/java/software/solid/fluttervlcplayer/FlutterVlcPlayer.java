@@ -138,6 +138,7 @@ final class FlutterVlcPlayer implements PlatformView {
         mediaPlayer.getVLCVout().setVideoSurface(textureView.getSurfaceTexture());
         textureView.setTextureEntry(textureEntry);
         textureView.setMediaPlayer(mediaPlayer);
+        mediaPlayer.setAudioOutput("opensles");
         mediaPlayer.setVideoTrackEnabled(true);
         //
         mediaPlayer.setEventListener(

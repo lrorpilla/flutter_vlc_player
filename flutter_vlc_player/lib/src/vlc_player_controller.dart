@@ -52,6 +52,10 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
   /// This member is deprecated, please, use the [addOnRendererEventListener] method instead.
   final RendererCallback? _onRendererHandler;
 
+  /// Set keep playing video in background, when app goes in background.
+  /// The default value is false.
+  final bool allowBackgroundPlayback;
+
   /// Only set for [asset] videos. The package that the asset was loaded from.
   String? package;
 
@@ -91,14 +95,15 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
   VlcPlayerController.asset(
     this.dataSource, {
     this.autoInitialize = true,
+    this.allowBackgroundPlayback = false,
     this.package,
     this.hwAcc = HwAcc.auto,
     this.autoPlay = true,
     this.options,
     @Deprecated('Please, use the addOnInitListener method instead.')
-        VoidCallback? onInit,
+    VoidCallback? onInit,
     @Deprecated('Please, use the addOnRendererEventListener method instead.')
-        RendererCallback? onRendererHandler,
+    RendererCallback? onRendererHandler,
   })  : _dataSourceType = DataSourceType.asset,
         _onInit = onInit,
         _onRendererHandler = onRendererHandler,
@@ -112,13 +117,14 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
   VlcPlayerController.network(
     this.dataSource, {
     this.autoInitialize = true,
+    this.allowBackgroundPlayback = false,
     this.hwAcc = HwAcc.auto,
     this.autoPlay = true,
     this.options,
     @Deprecated('Please, use the addOnInitListener method instead.')
-        VoidCallback? onInit,
+    VoidCallback? onInit,
     @Deprecated('Please, use the addOnRendererEventListener method instead.')
-        RendererCallback? onRendererHandler,
+    RendererCallback? onRendererHandler,
   })  : package = null,
         _dataSourceType = DataSourceType.network,
         _onInit = onInit,
@@ -132,13 +138,14 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
   VlcPlayerController.file(
     File file, {
     this.autoInitialize = true,
+    this.allowBackgroundPlayback = false,
     this.hwAcc = HwAcc.auto,
     this.autoPlay = true,
     this.options,
     @Deprecated('Please, use the addOnInitListener method instead.')
-        VoidCallback? onInit,
+    VoidCallback? onInit,
     @Deprecated('Please, use the addOnRendererEventListener method instead.')
-        RendererCallback? onRendererHandler,
+    RendererCallback? onRendererHandler,
   })  : dataSource = 'file://${file.path}',
         package = null,
         _dataSourceType = DataSourceType.file,
@@ -177,7 +184,10 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
       throw Exception('Already Initialized');
     }
 
-    _lifeCycleObserver = VlcAppLifeCycleObserver(this)..initialize();
+    if (!allowBackgroundPlayback) {
+      _lifeCycleObserver = VlcAppLifeCycleObserver(this);
+    }
+    _lifeCycleObserver?.initialize();
 
     await vlcPlayerPlatform.create(
       viewId: _viewId,
@@ -378,10 +388,11 @@ class VlcPlayerController extends ValueNotifier<VlcPlayerValue> {
     String? id,
     String? name,
   ) {
-    if (id == null || name == null) return;
-    _onRendererHandler?.call(type, id, name);
-    for (final listener in _onRendererEventListeners) {
-      listener(type, id, name);
+    if (_onRendererHandler != null) {
+      _onRendererHandler!(type, id!, name!);
+    }
+    for (var listener in _onRendererEventListeners) {
+      listener(type, id!, name!);
     }
   }
 
